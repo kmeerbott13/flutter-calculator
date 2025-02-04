@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:expressions/expressions.dart'; // External package for expression evaluation
+import 'package:expressions/expressions.dart';
 
 void main() {
   runApp(const MyApp());
@@ -52,17 +52,43 @@ class _CalculatorState extends State<Calculator> {
     });
   }
 
-  void _calculate() {
+  void _square() {
+    if (_expression.isEmpty) return;
+
     try {
-      // Replace × with * and ÷ with / for the expression parser
+      // First evaluate any existing expression
       String sanitizedExpression =
           _expression.replaceAll('×', '*').replaceAll('÷', '/');
-
-      // Create expression parser
       final expression = Expression.parse(sanitizedExpression);
       final evaluator = const ExpressionEvaluator();
+      final result = evaluator.eval(expression, {});
 
-      // Evaluate and handle potential division by zero
+      if (result.isInfinite || result.isNaN) {
+        throw Exception('Invalid calculation');
+      }
+
+      // Square the result
+      final squared = result * result;
+
+      setState(() {
+        _expression = '($sanitizedExpression)²';
+        _result = ' = ${squared.toString()}';
+        _hasError = false;
+      });
+    } catch (e) {
+      setState(() {
+        _result = ' Error';
+        _hasError = true;
+      });
+    }
+  }
+
+  void _calculate() {
+    try {
+      String sanitizedExpression =
+          _expression.replaceAll('×', '*').replaceAll('÷', '/');
+      final expression = Expression.parse(sanitizedExpression);
+      final evaluator = const ExpressionEvaluator();
       final result = evaluator.eval(expression, {});
 
       if (result.isInfinite || result.isNaN) {
@@ -108,14 +134,13 @@ class _CalculatorState extends State<Calculator> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Kai Meerbott", // Replace with your name
+          "Kai Meerbott",
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.blue,
       ),
       body: Column(
         children: [
-          // Display
           Container(
             padding: const EdgeInsets.all(16),
             alignment: Alignment.centerRight,
@@ -137,10 +162,7 @@ class _CalculatorState extends State<Calculator> {
               ],
             ),
           ),
-
           const Divider(thickness: 2),
-
-          // Calculator Buttons
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -159,13 +181,18 @@ class _CalculatorState extends State<Calculator> {
                       _buildButton('÷', color: Colors.blue),
                     ],
                   ),
-                  // Second row
+                  // Second row with new square button
                   Row(
                     children: [
                       _buildButton('7'),
                       _buildButton('8'),
                       _buildButton('9'),
                       _buildButton('×', color: Colors.blue),
+                      _buildButton(
+                        'x²',
+                        color: Colors.orange,
+                        onPressed: _square,
+                      ),
                     ],
                   ),
                   // Third row
